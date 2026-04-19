@@ -1,49 +1,77 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Grand River Fishing</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Grand River – Elora</title>
   <style>
     body {
-      font-family: Arial;
+      font-family: Arial, sans-serif;
+      background: #f2f2f2;
       text-align: center;
-      padding: 50px;
-      background: #f5f5f5;
+      padding: 60px 20px;
+      color: #111;
     }
+
+    h1 {
+      font-size: 56px;
+      margin-bottom: 30px;
+    }
+
     button {
-      padding: 12px 20px;
-      font-size: 16px;
-      cursor: pointer;
-    }
-    #result {
-      margin-top: 30px;
       font-size: 18px;
+      padding: 14px 28px;
+      cursor: pointer;
+      border: 1px solid #777;
+      background: #fff;
+    }
+
+    #result {
+      margin: 40px auto 0;
+      max-width: 900px;
+      font-size: 22px;
+      line-height: 1.5;
       white-space: pre-line;
     }
   </style>
 </head>
 <body>
-
   <h1>🎣 Grand River – Elora</h1>
+
   <button onclick="checkFishing()">Should I go fishing today?</button>
 
   <div id="result"></div>
 
   <script>
     async function checkFishing() {
-      document.getElementById("result").innerText = "Checking conditions...";
+      const resultEl = document.getElementById("result");
+      resultEl.innerText = "Checking conditions...";
 
-      const response = await fetch("/.netlify/functions/fishing");
+      try {
+        const response = await fetch("/.netlify/functions/fishing");
+        const data = await response.json();
 
-      const data = await response.json();
+        if (data.error) {
+          resultEl.innerText = `Error: ${data.error}`;
+          return;
+        }
 
-document.getElementById("result").innerText =
-  `Air Temp: ${data.weather_current.temperature_2m}°C
-Feels Like: ${data.weather_current.apparent_temperature}°C
-Wind: ${data.weather_current.wind_speed_10m} km/h
-Precipitation: ${data.weather_current.precipitation}
-GRCA Flow Page Found: ${data.grca_flow_page_found}
-GRCA Water Temp Page Found: ${data.grca_water_temp_page_found}`;
+        resultEl.innerText =
+`Air Temp: ${data.weather_current?.temperature_2m ?? "N/A"}°C
+Feels Like: ${data.weather_current?.apparent_temperature ?? "N/A"}°C
+Wind: ${data.weather_current?.wind_speed_10m ?? "N/A"} km/h
+Precipitation: ${data.weather_current?.precipitation ?? "N/A"}
+
+7-Day Highs: ${data.weather_daily?.temperature_2m_max?.join(", ") ?? "N/A"}
+7-Day Lows: ${data.weather_daily?.temperature_2m_min?.join(", ") ?? "N/A"}
+7-Day Precip %: ${data.weather_daily?.precipitation_probability_max?.join(", ") ?? "N/A"}
+
+GRCA Flow Page Found: ${data.grca_flow_page_found ? "Yes" : "No"}
+GRCA Water Temp Page Found: ${data.grca_water_temp_page_found ? "Yes" : "No"}`;
+      } catch (err) {
+        resultEl.innerText = `Error: ${err.message}`;
+      }
+    }
   </script>
-
 </body>
 </html>
