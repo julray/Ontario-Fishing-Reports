@@ -13,13 +13,34 @@ export async function handler() {
           {
             parts: [
               {
-                text: `Tell me whether today is a good day to fish for brown trout on the Grand River in Elora, Ontario.
+                text: `Today's date is ${new Date().toLocaleDateString("en-CA")}.
+
+Location: Grand River, Elora, Ontario.
+
+Use the Grand River Conservation Authority (GRCA) river data pages for current river conditions, especially flow, water temperature, and related watershed/weather data where available.
+
+For each species below:
+1. Say whether the season is OPEN or CLOSED in Ontario Zone 16.
+2. If open, give a fishing verdict for TODAY: GOOD, FAIR, or POOR.
+3. Use current public information, prioritizing GRCA data.
+4. Keep it practical and short.
+
+Species:
+- Brown Trout
+- Rainbow Trout
+- Northern Pike
 
 Return ONLY valid JSON in this exact format:
 {
-  "verdict": "",
-  "summary": "",
-  "best_time": ""
+  "species": [
+    {
+      "name": "",
+      "season": "OPEN or CLOSED",
+      "verdict": "GOOD / FAIR / POOR / N/A",
+      "reason": "",
+      "best_time": ""
+    }
+  ]
 }`
               }
             ]
@@ -36,9 +57,15 @@ Return ONLY valid JSON in this exact format:
       statusCode: response.status,
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        verdict: "Error",
-        summary: JSON.stringify(data),
-        best_time: "N/A"
+        species: [
+          {
+            name: "Error",
+            season: "N/A",
+            verdict: "N/A",
+            reason: JSON.stringify(data),
+            best_time: "N/A"
+          }
+        ]
       })
     };
   }
@@ -63,9 +90,15 @@ Return ONLY valid JSON in this exact format:
       statusCode: 200,
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        verdict: "Error",
-        summary: text || JSON.stringify(data),
-        best_time: "N/A"
+        species: [
+          {
+            name: "Error",
+            season: "N/A",
+            verdict: "N/A",
+            reason: text || "Could not parse Gemini response.",
+            best_time: "N/A"
+          }
+        ]
       })
     };
   }
