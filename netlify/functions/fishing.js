@@ -10,36 +10,57 @@ export async function handler() {
     body: JSON.stringify({
       model: "gpt-4.1-mini",
       tools: [{ type: "web_search" }],
-      input: `Determine whether today is a good day to fish for brown trout on the Grand River in Elora, Ontario.
-
-Return ONLY valid JSON:
-{
-  "verdict": "",
-  "summary": "",
-  "best_time": ""
-}`
+      input: "Determine whether today is a good day to fish for brown trout on the Grand River in Elora, Ontario. Return concise practical advice.",
+      text: {
+        format: {
+          type: "json_schema",
+          name: "fishing_report",
+          strict: true,
+          schema: {
+            type: "object",
+            additionalProperties: false,
+            properties: {
+              verdict: { type: "string" },
+              summary: { type: "string" },
+              best_time: { type: "string" }
+            },
+            required: ["verdict", "summary", "best_time"]
+          }
+        }
+      }
     })
   });
 
   const result = await response.json();
 
-  // Extract text
-  const text = result.output[0].content[0].text;
+  if (!response.ok) {
+    return {
+      statusCode: response.status,
+      body: JSON.stringify({
+        verdict: "Error",
+        summary: result.error?.message || "OpenAI request failed.",
+        best_time: "N/A"
+      })
+    };
+  }
 
-  // Parse JSON safely
   let parsed;
+
   try {
-    parsed = JSON.parse(text);
+    parsed = JSON.parse(result.output_text);
   } catch (e) {
     parsed = {
       verdict: "Error",
-      summary: text,
+      summary: "Could not parse model response.",
       best_time: "N/A"
     };
   }
 
   return {
     statusCode: 200,
+    headers: {
+      "Content-Type": "application/json"
+    },
     body: JSON.stringify(parsed)
   };
 }
