@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Grand River Fishing</title>
+  <style>
+    body {
+      font-family: Arial;
+      text-align: center;
+      padding: 50px;
+      background: #f5f5f5;
+    }
+    button {
+      padding: 12px 20px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    #result {
+      margin-top: 30px;
+      font-size: 18px;
+      white-space: pre-line;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>🎣 Grand River – Elora</h1>
+  <button onclick="checkFishing()">Should I go fishing today?</button>
+
+  <div id="result"></div>
+
+  <script>
+    async function checkFishing() {
+      document.getElementById("result").innerText = "Checking conditions...";
+
+      const response = await fetch("/.netlify/functions/fishing");
+
+      const data = await response.json();
+
+      document.getElementById("result").innerText =
+        `🎣 ${data.verdict}\n\n${data.summary}\n\nBest Time: ${data.best_time}`;
+    }
+  </script>
+
+</body>
+</html>
