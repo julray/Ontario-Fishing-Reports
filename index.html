@@ -36,9 +36,13 @@
 
       const data = await response.json();
 
-      document.getElementById("result").innerText =
-        `🎣 ${data.verdict}\n\n${data.summary}\n\nBest Time: ${data.best_time}`;
-    }
+document.getElementById("result").innerText =
+  `Air Temp: ${data.weather_current.temperature_2m}°C
+Feels Like: ${data.weather_current.apparent_temperature}°C
+Wind: ${data.weather_current.wind_speed_10m} km/h
+Precipitation: ${data.weather_current.precipitation}
+GRCA Flow Page Found: ${data.grca_flow_page_found}
+GRCA Water Temp Page Found: ${data.grca_water_temp_page_found}`;
   </script>
 
 </body>
