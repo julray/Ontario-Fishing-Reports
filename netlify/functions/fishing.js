@@ -1,104 +1,43 @@
 export async function handler() {
-  const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-
-  const response = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        contents: [
-          {
-            parts: [
-              {
-                text: `Today's date is ${new Date().toLocaleDateString("en-CA")}.
-
-Location: Grand River, Elora, Ontario.
-
-Use the Grand River Conservation Authority (GRCA) river data pages for current river conditions, especially flow, water temperature, and related watershed/weather data where available.
-
-For each species below:
-1. Say whether the season is OPEN or CLOSED in Ontario Zone 16.
-2. If open, give a fishing verdict for TODAY: GOOD, FAIR, or POOR.
-3. Use current public information, prioritizing GRCA data.
-4. Keep it practical and short.
-
-Species:
-- Brown Trout
-- Rainbow Trout
-- Northern Pike
-
-Return ONLY valid JSON in this exact format:
-{
-  "species": [
-    {
-      "name": "",
-      "season": "OPEN or CLOSED",
-      "verdict": "GOOD / FAIR / POOR / N/A",
-      "reason": "",
-      "best_time": ""
-    }
-  ]
-}`
-              }
-            ]
-          }
-        ]
-      })
-    }
-  );
-
-  const data = await response.json();
-
-  if (!response.ok) {
-    return {
-      statusCode: response.status,
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        species: [
-          {
-            name: "Error",
-            season: "N/A",
-            verdict: "N/A",
-            reason: JSON.stringify(data),
-            best_time: "N/A"
-          }
-        ]
-      })
-    };
-  }
-
-  const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text || "";
-  const text = rawText
-    .replace(/^```json\s*/i, "")
-    .replace(/^```\s*/i, "")
-    .replace(/\s*```$/, "")
-    .trim();
-
   try {
-    const parsed = JSON.parse(text);
+    // Elora coordinates
+    const lat = 43.683;
+    const lon = -80.433;
+
+    // 1) Real weather from Open-Meteo
+    const weatherRes = await fetch(
+      `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,apparent_temperature,precipitation,wind_speed_10m&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max&timezone=auto`
+    );
+    const weather = await weatherRes.json();
+
+    // 2) Real GRCA flow summary page
+    const flowRes = await fetch(
+      "https://www.grandriver.ca/our-watershed/river-data/river-and-stream-flows/flow-summary/"
+    );
+    const flowHtml = await flowRes.text();
+
+    // 3) Real GRCA water temperature page
+    const tempRes = await fetch(
+      "https://www.grandriver.ca/our-watershed/river-data/water-quality-data/water-temperature/"
+    );
+    const tempHtml = await tempRes.text();
 
     return {
       statusCode: 200,
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(parsed)
+      body: JSON.stringify({
+        weather_current: weather.current || null,
+        weather_daily: weather.daily || null,
+        grca_flow_page_found: flowHtml.includes("Flow Summary"),
+        grca_water_temp_page_found: tempHtml.includes("Water temperature")
+      })
     };
-  } catch {
+  } catch (err) {
     return {
-      statusCode: 200,
+      statusCode: 500,
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        species: [
-          {
-            name: "Error",
-            season: "N/A",
-            verdict: "N/A",
-            reason: text || "Could not parse Gemini response.",
-            best_time: "N/A"
-          }
-        ]
+        error: err.message
       })
     };
   }
