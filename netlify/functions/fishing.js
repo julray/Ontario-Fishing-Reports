@@ -43,10 +43,16 @@ Return ONLY valid JSON in this exact format:
     };
   }
 
-  const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || "";
+  const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text || "";
+  const text = rawText
+    .replace(/^```json\s*/i, "")
+    .replace(/^```\s*/i, "")
+    .replace(/\s*```$/, "")
+    .trim();
 
   try {
     const parsed = JSON.parse(text);
+
     return {
       statusCode: 200,
       headers: { "Content-Type": "application/json" },
