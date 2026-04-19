@@ -12,7 +12,7 @@ export async function handler() {
       tools: [{ type: "web_search" }],
       input: `Determine whether today is a good day to fish for brown trout on the Grand River in Elora, Ontario.
 
-Return JSON:
+Return ONLY valid JSON:
 {
   "verdict": "",
   "summary": "",
@@ -23,8 +23,23 @@ Return JSON:
 
   const result = await response.json();
 
+  // Extract text
+  const text = result.output[0].content[0].text;
+
+  // Parse JSON safely
+  let parsed;
+  try {
+    parsed = JSON.parse(text);
+  } catch (e) {
+    parsed = {
+      verdict: "Error",
+      summary: text,
+      best_time: "N/A"
+    };
+  }
+
   return {
     statusCode: 200,
-    body: result.output[0].content[0].text
+    body: JSON.stringify(parsed)
   };
 }
